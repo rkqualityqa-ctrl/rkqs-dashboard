@@ -239,28 +239,37 @@ const ExportEngine = (function () {
                 return;
             }
 
-            entries.forEach(([id, chart], i) => {
+            showToast(`Exporting ${entries.length} chart${entries.length > 1 ? "s" : ""} as PNG...`, "info");
+
+            // Download each chart in sequence, AWAITING a short stagger delay
+            // between each one - this is deliberately NOT a fire-and-forget
+            // setTimeout loop. withDashboardRendered() restores the original
+            // page (which destroys these charts) as soon as this whole
+            // callback resolves, so every download must actually finish
+            // first, or later ones would fire after their chart/canvas has
+            // already been destroyed and produce nothing.
+            for (let i = 0; i < entries.length; i++) {
+                const [id, chart] = entries[i];
+                try {
+                    const dataUrl = chart.toBase64Image("image/png", 1.0);
+                    const link = document.createElement("a");
+                    link.download = `${targetRoute}_${id}_${Helpers.todayStamp()}.png`;
+                    link.href = dataUrl;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } catch (err) {
+                    console.error("[RKQS] Chart PNG export failed for", id, err);
+                    showToast(`Could not export chart "${id}": ${err.message}`, "error");
+                }
                 // Stagger downloads slightly - firing many downloads in the
                 // same tick is what caused some browsers to silently drop
                 // or corrupt a few of them (previously reported as 0-byte
-                // files).
-                setTimeout(() => {
-                    try {
-                        const dataUrl = chart.toBase64Image("image/png", 1.0);
-                        const link = document.createElement("a");
-                        link.download = `${targetRoute}_${id}_${Helpers.todayStamp()}.png`;
-                        link.href = dataUrl;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                    } catch (err) {
-                        console.error("[RKQS] Chart PNG export failed for", id, err);
-                        showToast(`Could not export chart "${id}": ${err.message}`, "error");
-                    }
-                }, i * 200);
-            });
+                // files). Awaited here so the sequence truly finishes before
+                // this function returns.
+                await new Promise(r => setTimeout(r, 200));
+            }
 
-            showToast(`Exporting ${entries.length} chart${entries.length > 1 ? "s" : ""} as PNG...`, "info");
             AuditLog.log("Export", "Charts exported (PNG)", `${entries.length} chart(s) from ${targetRoute}`);
         });
     }
