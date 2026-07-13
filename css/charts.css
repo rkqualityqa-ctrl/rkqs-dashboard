@@ -1,0 +1,2 @@
+canvas { max-width: 100%; }
+.chart-box canvas, .chart-box-tall canvas { width: 100% !important; height: 100% !important; }

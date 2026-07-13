@@ -1,0 +1,54 @@
+:root {
+    --color-primary: #12224A;
+    --color-primary-light: #1B336B;
+    --color-accent: #C9A227;
+    --color-accent-soft: #F4E9C9;
+    --color-success: #1E8E5A;
+    --color-warning: #E0A100;
+    --color-danger: #D64545;
+    --color-info: #2F6FED;
+    --color-surface: #FFFFFF;
+    --color-surface-alt: #F5F7FB;
+    --color-border: #E4E8F0;
+    --color-text-primary: #16213A;
+    --color-text-secondary: #64708A;
+
+    --font-display: "Segoe UI", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-body: "Segoe UI", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: "SFMono-Regular", Consolas, monospace;
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+
+    --shadow-card: 0 1px 2px rgba(16, 24, 64, 0.04), 0 4px 16px rgba(16, 24, 64, 0.05);
+    --shadow-modal: 0 20px 60px rgba(10, 16, 40, 0.35);
+
+    --sidebar-width: 268px;
+    --sidebar-width-collapsed: 76px;
+    --header-height: 68px;
+}
+
+/* ---------------------------------------------------------
+   DARK MODE - toggled by Theme Manager via body.dark-mode.
+   Sidebar stays on --color-primary (already dark), only the
+   workspace surfaces/text/border flip.
+--------------------------------------------------------- */
+body.dark-mode {
+    --color-surface: #151B2E;
+    --color-surface-alt: #0E1424;
+    --color-border: #262E48;
+    --color-text-primary: #E7ECFB;
+    --color-text-secondary: #93A0C2;
+    --color-accent-soft: #2A2610;
+}
+body.dark-mode .empty-import,
+body.dark-mode .empty-state,
+body.dark-mode .hint {
+    color: var(--color-text-secondary);
+}
+body.dark-mode .import-warnings {
+    background: #2A2610;
+    border-color: #4A431C;
+    color: #E7ECFB;
+}

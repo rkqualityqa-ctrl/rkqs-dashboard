@@ -1,0 +1,113 @@
+.data-table { width: 100%; border-collapse: collapse; font-size: 12.8px; }
+.data-table th {
+    text-align: left; padding: 9px 10px; color: var(--color-text-secondary);
+    font-weight: 700; text-transform: uppercase; font-size: 10.5px; letter-spacing: .03em;
+    border-bottom: 2px solid var(--color-border);
+}
+.data-table td { padding: 9px 10px; border-bottom: 1px solid var(--color-border); }
+.data-table tbody tr:hover { background: var(--color-surface-alt); }
+
+.report-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.report-tab {
+    border: 1px solid var(--color-border); background: var(--color-surface-alt); padding: 7px 14px;
+    border-radius: 20px; font-size: 12.5px; cursor: pointer; color: var(--color-text-secondary); font-weight: 600;
+}
+.report-tab.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+.report-body { min-height: 200px; }
+.report-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+
+.modal-overlay {
+    position: fixed; inset: 0; background: rgba(10, 16, 40, .45); display: none;
+    align-items: center; justify-content: center; z-index: 100;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+    background: #fff; border-radius: var(--radius-lg); width: 460px; max-width: 92vw;
+    max-height: 82vh; overflow-y: auto; box-shadow: var(--shadow-modal);
+}
+.modal-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--color-border); }
+.modal-head h3 { margin: 0; font-size: 15px; }
+.modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--color-text-secondary); line-height: 1; }
+.modal-body { padding: 14px 20px 20px; }
+.import-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13px; border-bottom: 1px dashed var(--color-border); }
+.import-row:last-child { border-bottom: none; }
+.status-success { color: var(--color-success); } .status-warning { color: var(--color-warning); } .status-error { color: var(--color-danger); }
+.import-warnings { margin-top: 12px; background: #FFF8E6; border: 1px solid #F3DFA0; border-radius: var(--radius-sm); padding: 10px 12px; font-size: 12px; }
+.import-warnings ul { margin: 6px 0 0; padding-left: 18px; }
+
+#toastContainer { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 200; }
+.toast {
+    background: var(--color-text-primary); color: #fff; padding: 11px 18px; border-radius: var(--radius-sm);
+    font-size: 12.8px; box-shadow: var(--shadow-modal); opacity: 0; transform: translateY(8px); transition: .25s;
+    max-width: 340px;
+}
+.toast.visible { opacity: 1; transform: translateY(0); }
+.toast-error { background: var(--color-danger); }
+.toast-success { background: var(--color-success); }
+.toast-info { background: var(--color-primary); }
+
+footer.app-footer {
+    display: flex; justify-content: space-between; padding: 14px 4px 4px; font-size: 11px; color: var(--color-text-secondary);
+    border-top: 1px solid var(--color-border); margin-top: 20px;
+}
+
+/* ---------------------------------------------------------
+   LOADING OVERLAY (SRS 18.2 - shown during Excel import)
+--------------------------------------------------------- */
+.loading-overlay {
+    position: fixed; inset: 0; background: rgba(10, 16, 40, .55); display: none;
+    align-items: center; justify-content: center; z-index: 300; flex-direction: column; gap: 14px;
+}
+.loading-overlay.open { display: flex; }
+.loading-spinner {
+    width: 46px; height: 46px; border-radius: 50%;
+    border: 4px solid rgba(255,255,255,.25); border-top-color: #fff;
+    animation: rkqs-spin .8s linear infinite;
+}
+.loading-overlay-text { color: #fff; font-size: 13px; font-weight: 600; }
+@keyframes rkqs-spin { to { transform: rotate(360deg); } }
+
+/* ---------------------------------------------------------
+   DATE RANGE QUICK FILTER
+--------------------------------------------------------- */
+.date-range-field { display: flex; flex-direction: column; gap: 3px; min-width: 150px; }
+.date-range-field label { font-size: 11px; color: var(--color-text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+.date-range-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.date-range-controls select { padding: 7px 10px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-surface-alt); font-size: 13px; min-width: 140px; color: var(--color-text-primary); }
+.date-range-custom { display: flex; gap: 6px; align-items: center; }
+.date-range-custom input[type=date] { padding: 6px 8px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); font-size: 12.5px; background: var(--color-surface-alt); color: var(--color-text-primary); }
+.date-range-custom span { font-size: 12px; color: var(--color-text-secondary); }
+
+/* Dark mode: native date picker icon is black-on-black by default in Chromium;
+   invert it so it stays visible against the dark input background. */
+body.dark-mode .date-range-custom input[type=date]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}
+
+/* ---------------------------------------------------------
+   HEAT MAP
+--------------------------------------------------------- */
+.heatmap-wrap { overflow-x: auto; }
+.heatmap-table { border-collapse: collapse; font-size: 11.5px; width: 100%; }
+.heatmap-table th { padding: 6px 8px; text-align: center; font-weight: 700; color: var(--color-text-secondary); font-size: 10.5px; text-transform: uppercase; }
+.heatmap-table th.row-head, .heatmap-table td.row-head { text-align: left; font-weight: 700; color: var(--color-text-primary); white-space: nowrap; padding-right: 12px; }
+.heatmap-cell { width: 46px; height: 34px; text-align: center; border-radius: 4px; font-weight: 700; color: #fff; font-size: 11px; }
+.heatmap-cell.empty { background: var(--color-surface-alt); color: var(--color-text-secondary); font-weight: 400; }
+.heatmap-legend { display: flex; align-items: center; gap: 6px; margin-top: 14px; font-size: 11.5px; color: var(--color-text-secondary); }
+.heatmap-legend-scale { display: flex; height: 12px; width: 160px; border-radius: 6px; overflow: hidden; }
+.heatmap-legend-scale span { flex: 1; }
+
+/* ---------------------------------------------------------
+   THEME MANAGER
+--------------------------------------------------------- */
+.theme-preset-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 6px; }
+.theme-preset-card {
+    border: 2px solid var(--color-border); border-radius: var(--radius-md); padding: 12px; cursor: pointer;
+    transition: border-color .12s ease; background: var(--color-surface);
+}
+.theme-preset-card:hover { border-color: var(--color-accent); }
+.theme-preset-card.active { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-accent-soft); }
+.theme-preset-swatch { display: flex; height: 40px; border-radius: 7px; overflow: hidden; margin-bottom: 8px; }
+.theme-preset-swatch span { flex: 1; }
+.theme-preset-name { font-size: 12.5px; font-weight: 700; text-align: center; }
+.mode-toggle-row { display: flex; align-items: center; gap: 14px; margin: 18px 0; }

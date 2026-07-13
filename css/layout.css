@@ -1,0 +1,140 @@
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+    margin: 0;
+    font-family: var(--font-body);
+    color: var(--color-text-primary);
+    background: var(--color-surface-alt);
+    -webkit-font-smoothing: antialiased;
+}
+
+#appShell {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr;
+    grid-template-rows: var(--header-height) 1fr;
+    grid-template-areas:
+        "sidebar header"
+        "sidebar main";
+    min-height: 100vh;
+    transition: grid-template-columns .2s ease;
+}
+#appShell.sidebar-collapsed {
+    grid-template-columns: var(--sidebar-width-collapsed) 1fr;
+}
+#appShell.sidebar-collapsed .nav-item span,
+#appShell.sidebar-collapsed .brand-text,
+#appShell.sidebar-collapsed .nav-section-label,
+#appShell.sidebar-collapsed .sidebar-footer {
+    display: none;
+}
+
+.main-content {
+    grid-area: main;
+    padding: 20px 28px 40px;
+    overflow-y: auto;
+}
+
+/* ---------------------------------------------------------
+   PDF CAPTURE MODE - toggled by ExportEngine right before calling
+   html2canvas, so the FULL dashboard height renders instead of being
+   clipped to whatever fits in the on-screen scrollable viewport.
+--------------------------------------------------------- */
+body.pdf-capture-mode .main-content {
+    overflow: visible !important;
+    height: auto !important;
+}
+body.pdf-capture-mode #appShell {
+    height: auto !important;
+    min-height: 0 !important;
+}
+
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-card);
+}
+.filter-bar-label {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin-right: 4px;
+}
+#filterPanel {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    flex: 1;
+}
+.filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 120px;
+}
+.filter-field label {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+.filter-field select {
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-alt);
+    font-size: 13px;
+    color: var(--color-text-primary);
+    min-width: 130px;
+}
+.filter-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 18px; }
+@media (max-width: 1200px) {
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 860px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    /* Sidebar layout on narrow screens is handled in responsive.css as a
+       slide-in drawer overlay, not a squished grid column. */
+}
+
+.kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    margin-bottom: 18px;
+}
+@media (max-width: 1400px) { .kpi-strip { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 700px) { .kpi-strip { grid-template-columns: repeat(2, 1fr); } }
+
+.empty-import {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 90px 20px;
+    color: var(--color-text-secondary);
+}
+.empty-import-icon { width: 56px; height: 56px; color: var(--color-border); margin-bottom: 18px; }
+.empty-import h2 { color: var(--color-text-primary); margin: 0 0 8px; }
+
+.empty-state {
+    padding: 30px;
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+}

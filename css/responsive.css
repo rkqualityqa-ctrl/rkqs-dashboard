@@ -1,0 +1,63 @@
+@media print {
+    .sidebar, .topheader, .filter-bar, .report-actions, #toastContainer { display: none !important; }
+    #appShell { display: block; }
+    .main-content { padding: 0; }
+}
+
+@media (max-width: 600px) {
+    .topheader { padding: 0 12px; }
+    #pageTitle { font-size: 15px; }
+    .main-content { padding: 14px; }
+    .user-meta { display: none; }
+}
+
+/* ---------------------------------------------------------
+   MOBILE NAVIGATION (<=860px) - the sidebar becomes a slide-in
+   drawer instead of a squished/half-visible grid column, opened
+   via the existing hamburger button (#sidebarToggle) and closed by
+   the backdrop, a nav link tap, or the button again. Desktop's
+   sidebar-collapsed (icon-only) behavior is untouched above 860px.
+--------------------------------------------------------- */
+@media (max-width: 860px) {
+    #appShell {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "header"
+            "main";
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 0; left: 0; bottom: 0;
+        width: var(--sidebar-width);
+        z-index: 150;
+        transform: translateX(-100%);
+        transition: transform .25s ease;
+        box-shadow: 10px 0 30px rgba(10, 16, 40, .35);
+    }
+    #appShell.mobile-nav-open .sidebar {
+        transform: translateX(0);
+    }
+    /* icon-only collapse doesn't apply on mobile - the drawer is
+       either fully open or fully hidden */
+    #appShell.sidebar-collapsed .sidebar {
+        width: var(--sidebar-width);
+    }
+    #appShell.sidebar-collapsed .nav-item span,
+    #appShell.sidebar-collapsed .brand-text,
+    #appShell.sidebar-collapsed .nav-section-label,
+    #appShell.sidebar-collapsed .sidebar-footer {
+        display: revert;
+    }
+
+    .mobile-nav-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 16, 40, .5);
+        z-index: 140;
+    }
+    #appShell.mobile-nav-open .mobile-nav-backdrop {
+        display: block;
+    }
+}
