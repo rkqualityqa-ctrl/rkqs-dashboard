@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RKQS Smart Quality Dashboard Suite</title>
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<div id="appShell">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="brand-block">
+            <img id="brandLogo" src="assets/logos/rkqs_logo.png" alt="logo">
+            <div class="brand-text">
+                <span id="brandName">RK Quality Solutions</span>
+                <span id="brandTagline">SMART QUALITY DASHBOARD SUITE</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav" id="sidebarNav"></nav>
+        <div class="sidebar-footer">
+            <div id="footerBrand">© 2026 RK Quality Solutions. All Rights Reserved.</div>
+            <div id="footerEdition">Master Dashboard · Version 1.0.0</div>
+        </div>
+    </aside>
+
+    <!-- MOBILE NAV BACKDROP - only visible (via CSS) when the drawer is open below 860px -->
+    <div class="mobile-nav-backdrop" id="mobileNavBackdrop"></div>
+
+    <!-- HEADER -->
+    <header class="topheader">
+        <div class="header-left">
+            <button id="sidebarToggle" title="Toggle sidebar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <h1 id="pageTitle">Executive Dashboard</h1>
+        </div>
+        <div class="header-right">
+            <label class="edition-switch">
+                Client View
+                <span class="switch"><input type="checkbox" id="editionToggle"><span class="switch-slider"></span></span>
+            </label>
+
+            <button class="icon-btn" id="notifBtn" title="Alerts">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+                <span class="notif-badge" id="notifBadge">0</span>
+            </button>
+
+            <input type="file" id="excelFileInput" accept=".xlsx,.xls,.xlsm" hidden>
+            <button class="btn btn-primary" id="uploadBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M4 21h16"/></svg>
+                Upload Excel
+            </button>
+            <button class="btn btn-ghost" id="refreshBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v6h6"/><path d="M20 20v-6h-6"/><path d="M5 15a8 8 0 0014-5"/><path d="M19 9a8 8 0 00-14 5"/></svg>
+                Refresh
+            </button>
+
+            <div class="user-chip">
+                <div class="user-avatar" id="userChipAvatar">A</div>
+                <div class="user-meta"><strong id="userChipName">Admin</strong><span id="userRoleLabel">Super Administrator</span></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="main-content">
+        <div class="filter-bar">
+            <span class="filter-bar-label">Active Filters</span>
+            <div id="filterPanel"></div>
+        </div>
+        <div id="dashboardContent"></div>
+
+        <footer class="app-footer">
+            <span id="appVersionLabel">Version: 1.0.0</span>
+            <span>RKQS Smart Quality Dashboard Suite</span>
+        </footer>
+    </main>
+</div>
+
+<!-- IMPORT PREVIEW MODAL (SRS 20.3) -->
+<div class="modal-overlay" id="importModal">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h3>Import Preview</h3>
+            <button class="modal-close" id="closeImportModal">&times;</button>
+        </div>
+        <div class="modal-body" id="importModalBody"></div>
+    </div>
+</div>
+
+<div id="toastContainer"></div>
+
+<!-- LOADING OVERLAY (SRS 18.2 - shown during Excel import) -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-overlay-text" id="loadingOverlayText">Importing Excel file...</div>
+</div>
+
+<!-- VALIDITY LOCK SCREEN - shown instead of the dashboard when a client
+     package's validity has expired. Hidden entirely on builds where
+     AppConfig.LICENSE.enabled is false (the Master build). -->
+<div class="lock-screen" id="lockScreen" style="display:none">
+    <div class="lock-screen-box">
+        <img id="lockScreenLogo" src="assets/logos/rkqs_logo.png" alt="logo" class="lock-screen-logo">
+        <h2>Dashboard Validity Expired</h2>
+        <p id="lockScreenMessage">This dashboard's validity period has ended. Please contact RK Quality Solutions to renew access.</p>
+        <label>Enter Unlock Code</label>
+        <input type="text" id="lockScreenCodeInput" placeholder="RKQS-XXXX-XXXX">
+        <button class="btn btn-primary" id="lockScreenUnlockBtn">Unlock Dashboard</button>
+        <div id="lockScreenError" class="lock-screen-error"></div>
+    </div>
+</div>
+
+<!-- LIBRARIES (bundled locally - no CDN dependency) -->
+<script src="assets/libs/xlsx.min.js"></script>
+<script src="assets/libs/chart.min.js"></script>
+<script src="assets/libs/jspdf.min.js"></script>
+<script src="assets/libs/html2canvas.min.js"></script>
+<script src="assets/libs/jszip.min.js"></script>
+
+<!-- APPLICATION MODULES (order matters - dependency order) -->
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/helpers.js"></script>
+<script src="js/license.js"></script>
+<script src="js/excel.js"></script>
+<script src="js/validation.js"></script>
+<script src="js/datastore.js"></script>
+<script src="js/filters.js"></script>
+<script src="js/kpi.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/reports.js"></script>
+<script src="js/export.js"></script>
+<script src="js/auditlog.js"></script>
+<script src="js/clientmanagement.js"></script>
+<script src="js/whitelabel.js"></script>
+<script src="js/thememanager.js"></script>
+<script src="js/filemanagement.js"></script>
+<script src="js/datavalidation.js"></script>
+<script src="js/systemsettings.js"></script>
+<script src="js/package-source.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
