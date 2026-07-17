@@ -104,6 +104,7 @@ RKQS-Smart-Quality-Dashboard/
     config.js                - brand/theme/theme-presets/column config (single source of truth)
     state.js                 - AppState + pub/sub event bus
     helpers.js                - shared utilities incl. quick date-range presets
+    license.js                 - Validity Lock engine (unlock code generate/verify, no server needed)
     excel.js                 - Excel Engine
     validation.js             - Validation Engine
     datastore.js              - import orchestration pipeline
@@ -217,7 +218,48 @@ Changes apply immediately and persist in this browser's local storage
 across sessions. A **Reset to Defaults** button restores the factory values
 (8% / 90% / 90% / 3,000 rows).
 
-## 10. White Label Generator — how it works
+## 10. Validity Lock (optional, part of White Label Generator)
+
+When generating a client package, ticking **"Lock this package behind a
+validity date"** and picking an expiry date makes that specific client's
+dashboard show a locked screen (with an unlock code box) once the date
+passes, instead of the dashboard.
+
+**How to unlock a client once they pay:**
+1. Client Management → find the client → **"Generate Unlock Code"**.
+2. Enter the new validity date you're granting them (a 30-days-from-now
+   date is suggested automatically).
+3. A code like `RKQS-8F3A-2B91` is shown — copy it and send it to the
+   client (WhatsApp, email, call, however you'd normally reach them).
+4. The client types that code into their locked dashboard's unlock box →
+   it's immediately usable again, no re-download needed.
+
+**Important honesty note — please read before relying on this for
+payment enforcement:** this app has no server (by design — it's fully
+offline, SRS 4.1/19.1), so this lock is a **deterrent, not real DRM**.
+The code is a small checksum tying the license key baked into that
+client's package to whatever expiry date you grant — it correctly:
+- refuses a code meant for a *different* client's package,
+- refuses a code that's been altered/guessed,
+- persists the unlock in that browser so the client doesn't need to
+  re-enter it every visit.
+
+But because everything runs in the client's own browser with no
+server checking in, anyone willing to open browser developer tools and
+edit the page's local storage or the config.js file directly could bypass
+the lock. This is the same category of protection many small commercial
+tools use (a soft lock, not hardware-key-style enforcement) — good enough
+to stop a client from just continuing to use it unpaid without a
+conversation, not good enough to rely on against someone deliberately
+trying to defeat it.
+
+**Related protection:** every client package also has the header's
+"Client View" toggle permanently hidden and disabled (`AppConfig.EDITION_LOCKED: true`),
+so nobody viewing a client's package can simply flip a switch to reach
+Master Controls the way an earlier build accidentally allowed - see the
+v2.4.1 changelog entry below for that fix.
+
+## 11. White Label Generator — how it works
 
 Master Dashboard → **White Label Generator** → set Client Name, upload
 client logo, pick primary/accent colors → **Generate Client Package (.zip)**.
@@ -232,7 +274,7 @@ the client — it runs completely standalone.
 > include the Theme Manager preset picker (that stays a Master-only tool by
 > design per SRS 19.3).
 
-## 11. Known limitations (candidates for a future phase)
+## 12. Known limitations (candidates for a future phase)
 
 - Reports Center exports each report type individually; a combined
   "management pack" PDF (all reports in one file) is not yet built.
@@ -245,7 +287,7 @@ the client — it runs completely standalone.
 - Heat Map is Plant × Date only; Process × Shift or Part × Defect heat map
   variants are not yet built.
 
-## 12. Version history
+## 13. Version history
 
 - v1.0.0 (Phase 1) — Foundation through White Label Engine (Modules 1–12).
 - v1.1.0 (Phase 2) — Date range quick filters, Heat Map page, Theme Manager
@@ -355,4 +397,77 @@ the client — it runs completely standalone.
   publish a locked Client-edition build (generated via White Label
   Generator) while keeping Master Controls PC-only, for anyone who'd
   rather not have the admin pages reachable via the public link at all.
+- v2.0.1 (PNG export bugfix) — "Export Charts as PNG" stopped producing
+  files again after the v1.7.0 dashboard-selector fix. Root cause: the
+  per-chart downloads were staggered with fire-and-forget `setTimeout`
+  calls, so the async function returned (and the page-restore step that
+  destroys the temporarily-rendered dashboard's charts) before the
+  staggered downloads actually ran - later downloads in the batch fired
+  against charts that had already been destroyed, producing nothing.
+  Fixed by awaiting each staggered download in sequence, so the dashboard
+  is only restored after every chart has actually been exported. Confirmed
+  correct ordering with a timing simulation before shipping.
+- v2.1.0 (SRS Section 11 - Filter Panel completeness) — Added the 6
+  filters that existed in FilterEngine/AppState.filters and worked
+  end-to-end already, but were never exposed in the filter bar UI:
+  Department, Production Line, Operator, Inspector, Defect Name,
+  Disposition. Tucked behind a "More Filters" toggle (auto-expands if any
+  of them is already active) so the bar doesn't turn into 11 dropdowns by
+  default. Verified all 6 correctly narrow the dataset against real sample
+  data before shipping.
+- v2.2.0 (SRS Section 15 - Reports Center completeness) — Reports Center
+  had only 7 of the 15 report types the SRS requires. Added Weekly,
+  Monthly, and Yearly time rollups (aggregated directly from filtered
+  transaction rows, not averaged from the daily trend, so Defect % per
+  period is mathematically correct), plus Department, Process, Production
+  Line, Operator, and Inspector entity reports (reusing the same KPI
+  groupings the dashboards already compute). Reports Center now covers
+  all 15: Daily/Weekly/Monthly/Yearly/Plant/Department/Process/Production
+  Line/Customer/Part/Operator/Inspector/Defect/Pareto/Trend. Verified the
+  weekly rollup's total defect quantity across all periods exactly matches
+  the dataset's overall total before shipping (no double-counting or data
+  loss).
+- v2.3.0 (SRS Section 14 - Chart Engine completeness) — Added the 3
+  missing chart types: Horizontal Bar Chart, Pie Chart, and Stacked Bar
+  Chart. Applied them where they add real value rather than as unused
+  additions: every entity dashboard's ranking chart (Plant/Department/
+  Process/Line/Customer/Part/Operator/Inspector) now uses a Horizontal Bar
+  Chart instead of vertical, since long labels (customer names, part
+  numbers) read better that way; the Executive Dashboard gained a new
+  Disposition Breakdown Pie Chart and a new Plant-wise Disposition
+  Breakdown Stacked Bar Chart (Rework/Scrap/Accept composition per plant) -
+  both genuinely new insights, not shown anywhere before. Verified both new
+  KPI aggregations (dispositionBreakdown, plantDispositionBreakdown) sum
+  to exactly the dataset's overall total defect quantity before shipping.
+- v2.4.0 (Validity Lock) — New optional feature in White Label Generator:
+  lock a generated client package behind an expiry date, with a per-client
+  unlock code Client Management can generate once payment is confirmed
+  (see Section 10 above for the honesty note on what this can and can't
+  guarantee without a server - it's a deterrent, not real DRM). Verified
+  the full flow end-to-end before shipping: generate a locked package,
+  confirm it actually locks past its expiry, generate an unlock code from
+  just that client's stored license key, and confirm the code both unlocks
+  correctly and is rejected if used on a different client's package or if
+  tampered with.
+- v2.4.1 (Security bugfix - Client View toggle) — Found and fixed a real
+  gap: the header's "Client View" toggle existed unconditionally in every
+  build, including generated client packages - meaning anyone viewing a
+  client's locked package could just flip that switch themselves and
+  instantly reach every Master-only page (Client Management, White Label
+  Generator, System Settings, Branding, Audit Logs, File Management, Data
+  Validation), no password needed, completely bypassing SRS 19.3 and the
+  Validity Lock above. Fixed with a new `AppConfig.EDITION_LOCKED` flag,
+  baked in as `true` only for generated client packages: the toggle is
+  now both hidden and has no event listener attached at all in a locked
+  package, while remaining fully visible and functional on the Master
+  build for previewing Client View. Verified both states with a DOM
+  simulation before shipping - confirmed the toggle is inert in a client
+  package (a dispatched change event produces no effect) and still works
+  normally on the Master build.
+- v2.4.2 (Cosmetic fix - header user chip) — The header's user chip always
+  said "Admin / Super Administrator", even in a client's own dashboard,
+  which didn't make sense for them. Now reflects the actual edition: Master
+  keeps "Admin / Super Administrator", Client shows "User / Quality Team".
+  Purely decorative either way (this app has no login system) - verified
+  both editions render the correct label before shipping.
 
