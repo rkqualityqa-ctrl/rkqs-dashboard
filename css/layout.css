@@ -100,6 +100,28 @@ body.pdf-capture-mode #appShell {
     gap: 10px;
 }
 
+.more-filters-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    flex-basis: 100%;
+    padding-top: 12px;
+    margin-top: 4px;
+    border-top: 1px dashed var(--color-border);
+}
+#moreFiltersBtn.active {
+    background: var(--color-accent-soft);
+    color: var(--color-primary);
+    border-color: var(--color-accent);
+    font-weight: 700;
+}
+#moreFiltersCaret {
+    display: inline-block;
+    font-size: 10px;
+    margin-left: 2px;
+}
+
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 18px; }
 @media (max-width: 1200px) {
