@@ -150,6 +150,41 @@ const KpiEngine = (function () {
     }
 
     // Recent alerts (SRS "Recent Alerts" panel) - threshold breaches
+    // Disposition breakdown (SRS Disposition field) - total defect qty
+    // grouped by disposition value (Rework/Scrap/Accept/etc.), for the
+    // Executive Dashboard's Pie Chart.
+    function dispositionBreakdown(rows) {
+        const groups = {};
+        rows.forEach(r => {
+            const key = r.disposition || "Unspecified";
+            groups[key] = (groups[key] || 0) + (r.defectQty || 0);
+        });
+        return Object.entries(groups)
+            .map(([name, qty]) => ({ name, qty }))
+            .sort((a, b) => b.qty - a.qty);
+    }
+
+    // Plant x Disposition matrix - defect qty per plant, split by
+    // disposition, for the Executive Dashboard's Stacked Bar Chart.
+    function plantDispositionBreakdown(rows) {
+        const plants = Helpers.uniqueSorted(rows.map(r => r.plant));
+        const dispositions = Helpers.uniqueSorted(rows.map(r => r.disposition));
+        const matrix = {};
+        rows.forEach(r => {
+            if (!r.plant || !r.disposition) return;
+            matrix[r.plant] = matrix[r.plant] || {};
+            matrix[r.plant][r.disposition] = (matrix[r.plant][r.disposition] || 0) + (r.defectQty || 0);
+        });
+        return {
+            plants,
+            dispositions,
+            series: dispositions.map(d => ({
+                disposition: d,
+                data: plants.map(p => (matrix[p] && matrix[p][d]) || 0)
+            }))
+        };
+    }
+
     function generateAlerts(rows) {
         const alerts = [];
         const th = AppConfig.DEFAULTS;
@@ -190,10 +225,12 @@ const KpiEngine = (function () {
             topDefects: topDefects(filteredRows),
             trend: defectTrend(filteredRows),
             heatmap: heatmapMatrix(filteredRows),
+            dispositionBreakdown: dispositionBreakdown(filteredRows),
+            plantDispositionBreakdown: plantDispositionBreakdown(filteredRows),
             alerts: generateAlerts(filteredRows)
         };
         return AppState.kpis;
     }
 
-    return { calculateCoreKpis, groupBy, topDefects, defectTrend, heatmapMatrix, generateAlerts, recalculateAll };
+    return { calculateCoreKpis, groupBy, topDefects, defectTrend, heatmapMatrix, dispositionBreakdown, plantDispositionBreakdown, generateAlerts, recalculateAll };
 })();

@@ -12,7 +12,7 @@ Dependencies: none
 const AppConfig = {
 
     APP_NAME: "RKQS Smart Quality Dashboard Suite",
-    APP_VERSION: "2.0.0",
+    APP_VERSION: "2.4.2",
 
     // ---------------------------------------------------------
     // EDITION: "master" or "client"
@@ -118,11 +118,39 @@ const AppConfig = {
         { key: "remarks",     label: "Remarks",           mandatory: false }
     ],
 
+    // ---------------------------------------------------------
+    // EDITION_LOCKED - true only in a client package generated via White
+    // Label Generator. Master builds keep this false so Rakesh can freely
+    // toggle "Client View" to preview what a client sees. A client
+    // package must NEVER let EDITION be switched back to "master" at
+    // runtime - the header's Client View toggle is hidden entirely and
+    // its change handler is a no-op whenever this is true (see app.js).
+    // Without this, a client could just flip that switch themselves and
+    // reach every Master-only page with no password at all, defeating
+    // both SRS 19.3 and the Validity Lock.
+    // ---------------------------------------------------------
+    EDITION_LOCKED: false,
+
     // Chart color palette (used by Chart Engine so every chart is consistent)
     CHART_PALETTE: [
         "#12224A", "#2F6FED", "#C9A227", "#1E8E5A", "#D64545",
         "#7C4DFF", "#00B8D9", "#E0A100", "#6B7C93", "#9C27B0"
     ],
+
+    // ---------------------------------------------------------
+    // LICENSE / VALIDITY LOCK - only ever set to enabled:true inside a
+    // client package generated via White Label Generator with the
+    // validity option turned on. The Master build (this default) never
+    // locks. See license.js for how the lock/unlock actually works, and
+    // its honesty note on what this can and can't guarantee without a
+    // server.
+    // ---------------------------------------------------------
+    LICENSE: {
+        enabled: false,
+        licenseKey: null,
+        expiryDate: null,
+        clientName: null
+    },
 
     // ---------------------------------------------------------
     // THEME PRESETS - Theme Manager (Module-13, Master only) lets the

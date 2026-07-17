@@ -86,6 +86,38 @@ const ChartEngine = (function () {
         });
     }
 
+    // Horizontal Bar Chart (SRS Section 14) - same data shape as barChart,
+    // but with the category axis running top-to-bottom. Reads better than
+    // a vertical bar when labels are long (customer names, part numbers,
+    // operator/inspector names), which is why the shared entity-dashboard
+    // ranking chart uses this instead of barChart (see ui.js renderEntity).
+    function horizontalBarChart(canvasId, labels, data, opts = {}) {
+        destroy(canvasId);
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+        const c = chartColors();
+        AppState.charts[canvasId] = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels,
+                datasets: [{
+                    label: opts.label || "",
+                    data,
+                    backgroundColor: opts.color || getActiveTheme().primary,
+                    borderRadius: 6,
+                    maxBarThickness: 28
+                }]
+            },
+            options: baseOptions({
+                indexAxis: "y",
+                scales: {
+                    x: { beginAtZero: true, grid: { color: c.grid }, ticks: { color: c.text }, border: { color: c.grid } },
+                    y: { grid: { display: false }, ticks: { color: c.text }, border: { color: c.grid } }
+                }
+            })
+        });
+    }
+
     function lineChart(canvasId, labels, data, opts = {}) {
         destroy(canvasId);
         const ctx = document.getElementById(canvasId);
@@ -132,6 +164,63 @@ const ChartEngine = (function () {
             options: baseOptions({
                 cutout: "68%",
                 plugins: { legend: { display: false } }
+            })
+        });
+    }
+
+    // Pie Chart (SRS Section 14) - same slice-of-whole idea as the doughnut
+    // above, but a solid disc (no cutout) with the legend shown, since pie
+    // charts are normally used standalone rather than with a center-label
+    // KPI number the way the doughnut charts on this dashboard are.
+    function pieChart(canvasId, labels, data, opts = {}) {
+        destroy(canvasId);
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+        const c = chartColors();
+        AppState.charts[canvasId] = new Chart(ctx, {
+            type: "pie",
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    backgroundColor: opts.colors || AppConfig.CHART_PALETTE,
+                    borderWidth: 2,
+                    borderColor: AppConfig.UI_MODE === "dark" ? "#151B2E" : "#fff"
+                }]
+            },
+            options: baseOptions({
+                plugins: { legend: { display: true, position: "bottom", labels: { color: c.text } } }
+            })
+        });
+    }
+
+    // Stacked Bar Chart (SRS Section 14) - one bar per category (e.g. per
+    // Plant), each split into segments (e.g. Rework/Scrap/Accept) so both
+    // the total and its composition are visible at once. `datasets` is an
+    // array of { label, data, color }.
+    function stackedBarChart(canvasId, labels, datasets, opts = {}) {
+        destroy(canvasId);
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+        const c = chartColors();
+        AppState.charts[canvasId] = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels,
+                datasets: datasets.map(ds => ({
+                    label: ds.label,
+                    data: ds.data,
+                    backgroundColor: ds.color,
+                    borderRadius: 4,
+                    maxBarThickness: 46
+                }))
+            },
+            options: baseOptions({
+                plugins: { legend: { display: true, position: "bottom", labels: { color: c.text } } },
+                scales: {
+                    x: { stacked: true, grid: { display: false }, ticks: { color: c.text }, border: { color: c.grid } },
+                    y: { stacked: true, beginAtZero: true, grid: { color: c.grid }, ticks: { color: c.text }, border: { color: c.grid } }
+                }
             })
         });
     }
@@ -195,5 +284,5 @@ const ChartEngine = (function () {
         });
     }
 
-    return { barChart, lineChart, doughnutChart, sparkline, paretoChart, destroy, chartColors };
+    return { barChart, horizontalBarChart, lineChart, doughnutChart, pieChart, stackedBarChart, sparkline, paretoChart, destroy, chartColors };
 })();

@@ -96,6 +96,25 @@ const UI = (function () {
         document.getElementById("footerBrand").textContent = `© ${new Date().getFullYear()} ${brand.companyName}. All Rights Reserved.`;
         document.getElementById("footerEdition").textContent = `${brand.dashboardLabel} · Version ${AppConfig.APP_VERSION}`;
 
+        // The header's user chip is decorative (this app has no login
+        // system), but showing "Super Administrator" on a client's own
+        // dashboard was misleading - they aren't one. Reflect the actual
+        // edition instead.
+        const userNameEl = document.getElementById("userChipName");
+        const userRoleEl = document.getElementById("userRoleLabel");
+        const userAvatarEl = document.getElementById("userChipAvatar");
+        if (userNameEl && userRoleEl && userAvatarEl) {
+            if (isMaster) {
+                userNameEl.textContent = "Admin";
+                userRoleEl.textContent = "Super Administrator";
+                userAvatarEl.textContent = "A";
+            } else {
+                userNameEl.textContent = "User";
+                userRoleEl.textContent = "Quality Team";
+                userAvatarEl.textContent = "U";
+            }
+        }
+
         const items = SIDEBAR_ITEMS.map(renderNavItem).join("");
         const masterItems = isMaster
             ? `<div class="nav-section-label">Master Controls</div>` + MASTER_ONLY_ITEMS.map(renderNavItem).join("")
@@ -143,11 +162,27 @@ const UI = (function () {
 
     function renderFilterPanel() {
         const m = AppState.masters;
-        const filterDefs = [
+        // Primary filters - always visible (most commonly used).
+        const primaryFilterDefs = [
             ["plant", "Plant", m.plant], ["process", "Process", m.process],
             ["partNo", "Part", m.partNo], ["customer", "Customer", m.customer],
             ["shift", "Shift", m.shift]
         ];
+        // Additional filters per SRS Section 11 (Organization/Production/
+        // Quality groups) - tucked behind "More Filters" so the bar doesn't
+        // turn into 11 dropdowns in a row by default, but still fully
+        // available; FilterEngine and AppState.filters already support all
+        // of these regardless of whether they're shown here.
+        const moreFilterDefs = [
+            ["department", "Department", m.department],
+            ["line", "Production Line", m.line],
+            ["operator", "Operator", m.operator],
+            ["inspector", "Inspector", m.inspector],
+            ["defectName", "Defect Name", m.defectName],
+            ["disposition", "Disposition", m.disposition]
+        ];
+        const activeMoreCount = moreFilterDefs.filter(([key]) => AppState.filters[key] && AppState.filters[key] !== "All").length;
+
         const preset = AppState.filters.datePreset || "all";
         const fromVal = AppState.filters.dateFrom ? toDateInputValue(AppState.filters.dateFrom) : "";
         const toVal = AppState.filters.dateTo ? toDateInputValue(AppState.filters.dateTo) : "";
@@ -167,15 +202,21 @@ const UI = (function () {
                 </div>
             </div>`;
 
-        const el = document.getElementById("filterPanel");
-        el.innerHTML = dateRangeHtml + filterDefs.map(([key, label, options]) => `
+        const filterFieldHtml = ([key, label, options]) => `
             <div class="filter-field">
                 <label>${label}</label>
                 <select data-filter="${key}">
                     <option value="All">All</option>
                     ${options.map(o => `<option value="${Helpers.escapeHtml(o)}" ${AppState.filters[key] === o ? "selected" : ""}>${Helpers.escapeHtml(o)}</option>`).join("")}
                 </select>
-            </div>`).join("") + `<button class="btn btn-ghost" id="clearFiltersBtn">Clear All</button>`;
+            </div>`;
+
+        const el = document.getElementById("filterPanel");
+        el.innerHTML = dateRangeHtml
+            + primaryFilterDefs.map(filterFieldHtml).join("")
+            + `<button class="btn btn-ghost" id="moreFiltersBtn" type="button">More Filters${activeMoreCount ? ` (${activeMoreCount})` : ""} <span id="moreFiltersCaret">▾</span></button>`
+            + `<button class="btn btn-ghost" id="clearFiltersBtn">Clear All</button>`
+            + `<div class="more-filters-row" id="moreFiltersRow" style="display:none">${moreFilterDefs.map(filterFieldHtml).join("")}</div>`;
 
         el.querySelectorAll("select[data-filter]").forEach(sel => {
             sel.addEventListener("change", () => {
@@ -183,6 +224,21 @@ const UI = (function () {
             });
         });
         document.getElementById("clearFiltersBtn").addEventListener("click", () => FilterEngine.clearFilters());
+
+        const moreBtn = document.getElementById("moreFiltersBtn");
+        const moreRow = document.getElementById("moreFiltersRow");
+        // Auto-expand if any "more" filter is already active (e.g. after a
+        // page reload with filters restored), so the active choice is
+        // visible rather than hidden behind a collapsed toggle.
+        if (activeMoreCount > 0) {
+            moreRow.style.display = "flex";
+            moreBtn.classList.add("active");
+        }
+        moreBtn.addEventListener("click", () => {
+            const isOpen = moreRow.style.display !== "none";
+            moreRow.style.display = isOpen ? "none" : "flex";
+            moreBtn.classList.toggle("active", !isOpen);
+        });
 
         document.getElementById("dateRangePreset").addEventListener("change", (e) => {
             const val = e.target.value;
@@ -370,6 +426,10 @@ const UI = (function () {
             <div class="card"><div class="card-head"><h3>Top 10 Parts by Defect Qty</h3></div><div id="execPartTable"></div></div>
             <div class="card"><div class="card-head"><h3>Recent Alerts</h3></div><div id="execAlerts"></div></div>
             <div class="card"><div class="card-head"><h3>Data Summary</h3></div><div id="execSummary"></div></div>
+        </div>
+        <div class="grid-2">
+            <div class="card"><div class="card-head"><h3>Disposition Breakdown</h3></div><div class="chart-box"><canvas id="execDispositionPie"></canvas></div></div>
+            <div class="card"><div class="card-head"><h3>Plant-wise Disposition Breakdown</h3></div><div class="chart-box"><canvas id="execPlantDispositionStack"></canvas></div></div>
         </div>`;
     }
 
@@ -393,6 +453,16 @@ const UI = (function () {
         document.getElementById("execPartTable").innerHTML = rankingTable(kpis.byPart, "Part No");
         document.getElementById("execAlerts").innerHTML = alertsPanel(kpis.alerts);
         document.getElementById("execSummary").innerHTML = dataSummaryPanel();
+
+        // Pie Chart - Disposition Breakdown (SRS Section 14 chart type)
+        const disp = kpis.dispositionBreakdown;
+        ChartEngine.pieChart("execDispositionPie", disp.map(d => d.name), disp.map(d => d.qty));
+
+        // Stacked Bar Chart - Plant x Disposition (SRS Section 14 chart type)
+        const pd = kpis.plantDispositionBreakdown;
+        const stackColors = AppConfig.CHART_PALETTE;
+        ChartEngine.stackedBarChart("execPlantDispositionStack", pd.plants,
+            pd.series.map((s, i) => ({ label: s.disposition, data: s.data, color: stackColors[i % stackColors.length] })));
     }
 
     function entityTemplate(route) {
@@ -417,7 +487,10 @@ const UI = (function () {
             document.getElementById("entTable").innerHTML = `<div class="empty-state">No Operator/Inspector data available in the uploaded file.</div>`;
             return;
         }
-        ChartEngine.barChart("entBar", grouped.slice(0, 10).map(g => g.name), grouped.slice(0, 10).map(g => g.defectQty), { color: getActiveTheme().primary });
+        // Horizontal Bar Chart (SRS Section 14 chart type) - reads better
+        // than a vertical bar for the long labels these rankings often have
+        // (customer names, part numbers, operator/inspector names).
+        ChartEngine.horizontalBarChart("entBar", grouped.slice(0, 10).map(g => g.name), grouped.slice(0, 10).map(g => g.defectQty), { color: getActiveTheme().primary });
         ChartEngine.lineChart("entTrend", kpis.trend.map(t => t.label), kpis.trend.map(t => Math.round(t.defectPercent * 100) / 100), { color: getActiveTheme().accent });
         document.getElementById("entTable").innerHTML = rankingTable(grouped, def.nameLabel);
     }

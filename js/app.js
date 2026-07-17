@@ -20,6 +20,15 @@ const Router = (function () {
 document.addEventListener("DOMContentLoaded", () => {
     console.log("[RKQS] Bootstrap starting...");
 
+    // 0a. Validity lock check - shown as an overlay on top of everything
+    // else if this package's validity has expired. The dashboard still
+    // initializes normally underneath (see rest of this function) so that
+    // the moment a valid unlock code is entered, it's already there and
+    // ready - no page reload needed.
+    if (typeof LicenseEngine !== "undefined" && LicenseEngine.isLocked()) {
+        showLockScreen();
+    }
+
     // 0. Global safety net - ANY uncaught error or rejected promise anywhere
     //    in the app must surface to the user, never fail silently.
     window.addEventListener("error", (e) => {
@@ -51,13 +60,26 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("mobileNavBackdrop").addEventListener("click", () => {
         document.getElementById("appShell").classList.remove("mobile-nav-open");
     });
-    document.getElementById("editionToggle").addEventListener("change", (e) => {
-        AppConfig.EDITION = e.target.checked ? "client" : "master";
-        applyEditionClass();
-        UI.renderChrome();
-        UI.renderPage(AppState.activeRoute);
-        AuditLog.log("System", "View switched", `Switched to ${AppConfig.EDITION === "client" ? "Client" : "Master"} View`);
-    });
+    // The Client View toggle must only ever work on the Master build (for
+    // Rakesh to preview what a client sees). In a client package,
+    // AppConfig.EDITION_LOCKED is baked in as true, and the toggle must be
+    // both hidden and functionally disabled - otherwise a client could
+    // simply flip it themselves and reach every Master-only page (Client
+    // Management, White Label Generator, System Settings, etc.) with no
+    // password at all, which is exactly what SRS 19.3 and the Validity
+    // Lock are both meant to prevent.
+    const editionSwitchLabel = document.querySelector(".edition-switch");
+    if (AppConfig.EDITION_LOCKED) {
+        if (editionSwitchLabel) editionSwitchLabel.style.display = "none";
+    } else {
+        document.getElementById("editionToggle").addEventListener("change", (e) => {
+            AppConfig.EDITION = e.target.checked ? "client" : "master";
+            applyEditionClass();
+            UI.renderChrome();
+            UI.renderPage(AppState.activeRoute);
+            AuditLog.log("System", "View switched", `Switched to ${AppConfig.EDITION === "client" ? "Client" : "Master"} View`);
+        });
+    }
     document.getElementById("closeImportModal").addEventListener("click", hideImportModal);
 
     // 2b. Drag-and-drop support anywhere on the page. Also prevents the
@@ -188,6 +210,38 @@ function showLoadingOverlay(text) {
 
 function hideLoadingOverlay() {
     document.getElementById("loadingOverlay").classList.remove("open");
+}
+
+function showLockScreen() {
+    const brand = getActiveBranding();
+    const lockLogo = document.getElementById("lockScreenLogo");
+    if (lockLogo) lockLogo.src = brand.logo;
+    const nameSpan = document.getElementById("lockScreenMessage");
+    if (nameSpan && AppConfig.LICENSE.clientName) {
+        nameSpan.textContent = `The validity period for "${AppConfig.LICENSE.clientName}" has ended. Please contact RK Quality Solutions to renew access.`;
+    }
+    document.getElementById("lockScreen").style.display = "flex";
+
+    document.getElementById("lockScreenUnlockBtn").addEventListener("click", attemptDashboardUnlock);
+    document.getElementById("lockScreenCodeInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") attemptDashboardUnlock();
+    });
+}
+
+function attemptDashboardUnlock() {
+    const input = document.getElementById("lockScreenCodeInput");
+    const errorEl = document.getElementById("lockScreenError");
+    const result = LicenseEngine.attemptUnlock(input.value);
+    if (result.success) {
+        errorEl.textContent = "";
+        document.getElementById("lockScreen").style.display = "none";
+        showToast("Dashboard unlocked. New validity: " + Helpers.formatDate(result.newExpiry), "success");
+        if (typeof AuditLog !== "undefined") {
+            AuditLog.log("System", "Dashboard unlocked", "New validity: " + Helpers.formatDate(result.newExpiry));
+        }
+    } else {
+        errorEl.textContent = result.message;
+    }
 }
 
 // SRS 18.1/18.2 - Performance & Large File Handling.
