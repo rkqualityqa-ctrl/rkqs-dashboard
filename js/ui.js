@@ -377,6 +377,17 @@ const UI = (function () {
         // Generator, or Branding & Settings even before the first upload.
         const DATA_INDEPENDENT_ROUTES = ["filemanagement", "datavalidation", "clientmanagement", "thememanager", "whitelabel", "branding", "systemsettings", "auditlogs"];
 
+        // The "Active Filters" bar (Date Range/Plant/Process/.../More
+        // Filters) only makes sense on pages whose content actually reads
+        // AppState.filters - the data dashboards, Reports Center, and
+        // Export Center (both build their output from the filtered
+        // dataset). It has nothing to do with File Management, Data
+        // Validation, Client Management, White Label Generator, Theme
+        // Manager, Branding & Settings, System Settings, or Audit Logs, so
+        // showing it there was just confusing clutter with no effect.
+        const filterBarEl = document.querySelector(".filter-bar");
+        if (filterBarEl) filterBarEl.style.display = DATA_INDEPENDENT_ROUTES.includes(route) ? "none" : "flex";
+
         if (!AppState.transactions.length && !DATA_INDEPENDENT_ROUTES.includes(route)) {
             main.innerHTML = emptyImportState();
             bindUploadButtons();
